@@ -1,0 +1,757 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "We run a linear regression model on the cleaned data. Future plan is to perform cross-validation to improve the generalization of our model. We also plan to improve the model by using non linear models to capture the nonlinearity of the data."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import pandas as pd\n",
+    "import numpy as np\n",
+    "import matplotlib.pyplot as plt\n",
+    "import sklearn.preprocessing as preprocessing\n",
+    "from sklearn.model_selection import train_test_split\n",
+    "import sklearn.metrics as metrics"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "metadata": {
+    "scrolled": true
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>Max AQI</th>\n",
+       "      <th>90th Percentile AQI</th>\n",
+       "      <th>Median AQI</th>\n",
+       "      <th>BED_UTILIZATION</th>\n",
+       "      <th>WA_MALE</th>\n",
+       "      <th>WA_FEMALE</th>\n",
+       "      <th>BA_MALE</th>\n",
+       "      <th>BA_FEMALE</th>\n",
+       "      <th>IA_MALE</th>\n",
+       "      <th>IA_FEMALE</th>\n",
+       "      <th>...</th>\n",
+       "      <th>UNHBEHCurrent Smoking</th>\n",
+       "      <th>UNHBEHObesity</th>\n",
+       "      <th>UNHBEHPhysical Inactivity</th>\n",
+       "      <th>UNHBEHSleep &lt;7 hours</th>\n",
+       "      <th>noise_mean</th>\n",
+       "      <th>case_fatality</th>\n",
+       "      <th>PCTUI_Pov</th>\n",
+       "      <th>Pov%</th>\n",
+       "      <th>OTHER_MALE</th>\n",
+       "      <th>OTHER_FEMALE</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>NaN</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>0.623113</td>\n",
+       "      <td>20878.0</td>\n",
+       "      <td>21729.0</td>\n",
+       "      <td>5237.0</td>\n",
+       "      <td>6000.0</td>\n",
+       "      <td>121.0</td>\n",
+       "      <td>145.0</td>\n",
+       "      <td>...</td>\n",
+       "      <td>19.8</td>\n",
+       "      <td>35.5</td>\n",
+       "      <td>26.4</td>\n",
+       "      <td>38.4</td>\n",
+       "      <td>86.665211</td>\n",
+       "      <td>0.011949</td>\n",
+       "      <td>20.0</td>\n",
+       "      <td>0.201781</td>\n",
+       "      <td>538.0</td>\n",
+       "      <td>507.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>74.0</td>\n",
+       "      <td>48.0</td>\n",
+       "      <td>37.0</td>\n",
+       "      <td>2.254794</td>\n",
+       "      <td>94810.0</td>\n",
+       "      <td>100388.0</td>\n",
+       "      <td>9486.0</td>\n",
+       "      <td>10107.0</td>\n",
+       "      <td>903.0</td>\n",
+       "      <td>839.0</td>\n",
+       "      <td>...</td>\n",
+       "      <td>18.5</td>\n",
+       "      <td>29.4</td>\n",
+       "      <td>23.5</td>\n",
+       "      <td>36.4</td>\n",
+       "      <td>47.636945</td>\n",
+       "      <td>0.012346</td>\n",
+       "      <td>25.7</td>\n",
+       "      <td>0.182297</td>\n",
+       "      <td>2042.0</td>\n",
+       "      <td>2125.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>NaN</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>0.430640</td>\n",
+       "      <td>6389.0</td>\n",
+       "      <td>5745.0</td>\n",
+       "      <td>6311.0</td>\n",
+       "      <td>5595.0</td>\n",
+       "      <td>103.0</td>\n",
+       "      <td>67.0</td>\n",
+       "      <td>...</td>\n",
+       "      <td>25.5</td>\n",
+       "      <td>40.8</td>\n",
+       "      <td>36.8</td>\n",
+       "      <td>40.9</td>\n",
+       "      <td>64.315150</td>\n",
+       "      <td>0.021254</td>\n",
+       "      <td>18.5</td>\n",
+       "      <td>0.378581</td>\n",
+       "      <td>172.0</td>\n",
+       "      <td>136.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>NaN</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>0.376219</td>\n",
+       "      <td>8766.0</td>\n",
+       "      <td>8425.0</td>\n",
+       "      <td>2941.0</td>\n",
+       "      <td>1822.0</td>\n",
+       "      <td>53.0</td>\n",
+       "      <td>50.0</td>\n",
+       "      <td>...</td>\n",
+       "      <td>23.1</td>\n",
+       "      <td>38.4</td>\n",
+       "      <td>31.2</td>\n",
+       "      <td>40.1</td>\n",
+       "      <td>58.173180</td>\n",
+       "      <td>0.022697</td>\n",
+       "      <td>17.5</td>\n",
+       "      <td>0.265817</td>\n",
+       "      <td>124.0</td>\n",
+       "      <td>139.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>NaN</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>0.499069</td>\n",
+       "      <td>27258.0</td>\n",
+       "      <td>28154.0</td>\n",
+       "      <td>516.0</td>\n",
+       "      <td>462.0</td>\n",
+       "      <td>192.0</td>\n",
+       "      <td>178.0</td>\n",
+       "      <td>...</td>\n",
+       "      <td>23.0</td>\n",
+       "      <td>33.7</td>\n",
+       "      <td>30.1</td>\n",
+       "      <td>38.8</td>\n",
+       "      <td>54.338911</td>\n",
+       "      <td>0.017038</td>\n",
+       "      <td>25.2</td>\n",
+       "      <td>0.227849</td>\n",
+       "      <td>379.0</td>\n",
+       "      <td>435.0</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "<p>5 rows × 44 columns</p>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "   Max AQI  90th Percentile AQI  Median AQI  BED_UTILIZATION  WA_MALE  \\\n",
+       "0      NaN                  NaN         NaN         0.623113  20878.0   \n",
+       "1     74.0                 48.0        37.0         2.254794  94810.0   \n",
+       "2      NaN                  NaN         NaN         0.430640   6389.0   \n",
+       "3      NaN                  NaN         NaN         0.376219   8766.0   \n",
+       "4      NaN                  NaN         NaN         0.499069  27258.0   \n",
+       "\n",
+       "   WA_FEMALE  BA_MALE  BA_FEMALE  IA_MALE  IA_FEMALE  ...  \\\n",
+       "0    21729.0   5237.0     6000.0    121.0      145.0  ...   \n",
+       "1   100388.0   9486.0    10107.0    903.0      839.0  ...   \n",
+       "2     5745.0   6311.0     5595.0    103.0       67.0  ...   \n",
+       "3     8425.0   2941.0     1822.0     53.0       50.0  ...   \n",
+       "4    28154.0    516.0      462.0    192.0      178.0  ...   \n",
+       "\n",
+       "   UNHBEHCurrent Smoking  UNHBEHObesity  UNHBEHPhysical Inactivity  \\\n",
+       "0                   19.8           35.5                       26.4   \n",
+       "1                   18.5           29.4                       23.5   \n",
+       "2                   25.5           40.8                       36.8   \n",
+       "3                   23.1           38.4                       31.2   \n",
+       "4                   23.0           33.7                       30.1   \n",
+       "\n",
+       "   UNHBEHSleep <7 hours  noise_mean  case_fatality  PCTUI_Pov      Pov%  \\\n",
+       "0                  38.4   86.665211       0.011949       20.0  0.201781   \n",
+       "1                  36.4   47.636945       0.012346       25.7  0.182297   \n",
+       "2                  40.9   64.315150       0.021254       18.5  0.378581   \n",
+       "3                  40.1   58.173180       0.022697       17.5  0.265817   \n",
+       "4                  38.8   54.338911       0.017038       25.2  0.227849   \n",
+       "\n",
+       "   OTHER_MALE  OTHER_FEMALE  \n",
+       "0       538.0         507.0  \n",
+       "1      2042.0        2125.0  \n",
+       "2       172.0         136.0  \n",
+       "3       124.0         139.0  \n",
+       "4       379.0         435.0  \n",
+       "\n",
+       "[5 rows x 44 columns]"
+      ]
+     },
+     "execution_count": 2,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "#load data\n",
+    "lr = pd.read_csv(\"base_final.csv\", dtype={'PCTUI_Pov': str})\n",
+    "#head of the data\n",
+    "lr.head(5)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "Index(['Max AQI', '90th Percentile AQI', 'Median AQI', 'BED_UTILIZATION',\n",
+       "       'WA_MALE', 'WA_FEMALE', 'BA_MALE', 'BA_FEMALE', 'IA_MALE', 'IA_FEMALE',\n",
+       "       'AA_MALE', 'AA_FEMALE', 'NA_MALE', 'NA_FEMALE', 'HLTHOUTArthritis',\n",
+       "       'HLTHOUTCOPD', 'HLTHOUTCancer (except skin)',\n",
+       "       'HLTHOUTChronic Kidney Disease', 'HLTHOUTCoronary Heart Disease',\n",
+       "       'HLTHOUTCurrent Asthma', 'HLTHOUTDiabetes', 'HLTHOUTMental Health',\n",
+       "       'HLTHOUTPhysical Health', 'HLTHOUTStroke', 'HLTHOUTTeeth Loss',\n",
+       "       'PREVENTAnnual Checkup', 'PREVENTCervical Cancer Screening',\n",
+       "       'PREVENTColorectal Cancer Screening',\n",
+       "       'PREVENTCore preventive services for older men',\n",
+       "       'PREVENTCore preventive services for older women',\n",
+       "       'PREVENTDental Visit', 'PREVENTHealth Insurance', 'PREVENTMammography',\n",
+       "       'UNHBEHBinge Drinking', 'UNHBEHCurrent Smoking', 'UNHBEHObesity',\n",
+       "       'UNHBEHPhysical Inactivity', 'UNHBEHSleep <7 hours', 'noise_mean',\n",
+       "       'case_fatality', 'PCTUI_Pov', 'Pov%', 'OTHER_MALE', 'OTHER_FEMALE'],\n",
+       "      dtype='object')"
+      ]
+     },
+     "execution_count": 3,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "lr.columns"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 4,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "#drop rows with null values\n",
+    "lr1 = lr.dropna(axis =0)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 5,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "#drop columns that ranked low during feature selection\n",
+    "X = lr1.drop(columns = ['case_fatality', 'UNHBEHBinge Drinking','HLTHOUTPhysical Health', 'HLTHOUTTeeth Loss', 'HLTHOUTStroke', 'BED_UTILIZATION', 'PREVENTCervical Cancer Screening', '90th Percentile AQI','UNHBEHCurrent Smoking', 'HLTHOUTCOPD', \n",
+    " 'PREVENTColorectal Cancer Screening', 'HLTHOUTArthritis'])"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 29,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "Index(['Max AQI', 'Median AQI', 'WA_MALE', 'WA_FEMALE', 'BA_MALE', 'BA_FEMALE',\n",
+       "       'IA_MALE', 'IA_FEMALE', 'AA_MALE', 'AA_FEMALE', 'NA_MALE', 'NA_FEMALE',\n",
+       "       'HLTHOUTCancer (except skin)', 'HLTHOUTChronic Kidney Disease',\n",
+       "       'HLTHOUTCoronary Heart Disease', 'HLTHOUTCurrent Asthma',\n",
+       "       'HLTHOUTDiabetes', 'HLTHOUTMental Health', 'PREVENTAnnual Checkup',\n",
+       "       'PREVENTCore preventive services for older men',\n",
+       "       'PREVENTCore preventive services for older women',\n",
+       "       'PREVENTDental Visit', 'PREVENTHealth Insurance', 'PREVENTMammography',\n",
+       "       'UNHBEHObesity', 'UNHBEHPhysical Inactivity', 'UNHBEHSleep <7 hours',\n",
+       "       'noise_mean', 'PCTUI_Pov', 'Pov%', 'OTHER_MALE', 'OTHER_FEMALE'],\n",
+       "      dtype='object')"
+      ]
+     },
+     "execution_count": 29,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "#updated columns of our new dataframe\n",
+    "X.columns"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 7,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "#define target variable\n",
+    "y = lr1['case_fatality']"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 9,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>Max AQI</th>\n",
+       "      <th>Median AQI</th>\n",
+       "      <th>WA_MALE</th>\n",
+       "      <th>WA_FEMALE</th>\n",
+       "      <th>BA_MALE</th>\n",
+       "      <th>BA_FEMALE</th>\n",
+       "      <th>IA_MALE</th>\n",
+       "      <th>IA_FEMALE</th>\n",
+       "      <th>AA_MALE</th>\n",
+       "      <th>AA_FEMALE</th>\n",
+       "      <th>...</th>\n",
+       "      <th>PREVENTHealth Insurance</th>\n",
+       "      <th>PREVENTMammography</th>\n",
+       "      <th>UNHBEHObesity</th>\n",
+       "      <th>UNHBEHPhysical Inactivity</th>\n",
+       "      <th>UNHBEHSleep &lt;7 hours</th>\n",
+       "      <th>noise_mean</th>\n",
+       "      <th>PCTUI_Pov</th>\n",
+       "      <th>Pov%</th>\n",
+       "      <th>OTHER_MALE</th>\n",
+       "      <th>OTHER_FEMALE</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>74.0</td>\n",
+       "      <td>37.0</td>\n",
+       "      <td>94810.0</td>\n",
+       "      <td>100388.0</td>\n",
+       "      <td>9486.0</td>\n",
+       "      <td>10107.0</td>\n",
+       "      <td>903.0</td>\n",
+       "      <td>839.0</td>\n",
+       "      <td>932.0</td>\n",
+       "      <td>1448.0</td>\n",
+       "      <td>...</td>\n",
+       "      <td>13.6</td>\n",
+       "      <td>74.0</td>\n",
+       "      <td>29.4</td>\n",
+       "      <td>23.5</td>\n",
+       "      <td>36.4</td>\n",
+       "      <td>47.636945</td>\n",
+       "      <td>25.7</td>\n",
+       "      <td>0.182297</td>\n",
+       "      <td>2042.0</td>\n",
+       "      <td>2125.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>25</th>\n",
+       "      <td>47.0</td>\n",
+       "      <td>33.0</td>\n",
+       "      <td>29676.0</td>\n",
+       "      <td>31785.0</td>\n",
+       "      <td>8345.0</td>\n",
+       "      <td>8834.0</td>\n",
+       "      <td>212.0</td>\n",
+       "      <td>201.0</td>\n",
+       "      <td>270.0</td>\n",
+       "      <td>340.0</td>\n",
+       "      <td>...</td>\n",
+       "      <td>14.4</td>\n",
+       "      <td>77.0</td>\n",
+       "      <td>35.1</td>\n",
+       "      <td>27.5</td>\n",
+       "      <td>38.8</td>\n",
+       "      <td>62.698557</td>\n",
+       "      <td>19.9</td>\n",
+       "      <td>0.192970</td>\n",
+       "      <td>688.0</td>\n",
+       "      <td>766.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>27</th>\n",
+       "      <td>92.0</td>\n",
+       "      <td>35.0</td>\n",
+       "      <td>40115.0</td>\n",
+       "      <td>42386.0</td>\n",
+       "      <td>7542.0</td>\n",
+       "      <td>8560.0</td>\n",
+       "      <td>334.0</td>\n",
+       "      <td>293.0</td>\n",
+       "      <td>412.0</td>\n",
+       "      <td>429.0</td>\n",
+       "      <td>...</td>\n",
+       "      <td>16.1</td>\n",
+       "      <td>75.4</td>\n",
+       "      <td>36.9</td>\n",
+       "      <td>31.0</td>\n",
+       "      <td>38.8</td>\n",
+       "      <td>50.429461</td>\n",
+       "      <td>19.8</td>\n",
+       "      <td>0.267143</td>\n",
+       "      <td>927.0</td>\n",
+       "      <td>965.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>36</th>\n",
+       "      <td>129.0</td>\n",
+       "      <td>46.0</td>\n",
+       "      <td>169820.0</td>\n",
+       "      <td>179696.0</td>\n",
+       "      <td>130550.0</td>\n",
+       "      <td>155711.0</td>\n",
+       "      <td>917.0</td>\n",
+       "      <td>947.0</td>\n",
+       "      <td>5599.0</td>\n",
+       "      <td>6187.0</td>\n",
+       "      <td>...</td>\n",
+       "      <td>14.5</td>\n",
+       "      <td>81.8</td>\n",
+       "      <td>34.6</td>\n",
+       "      <td>27.5</td>\n",
+       "      <td>39.7</td>\n",
+       "      <td>44.628149</td>\n",
+       "      <td>20.0</td>\n",
+       "      <td>0.237729</td>\n",
+       "      <td>4198.0</td>\n",
+       "      <td>4566.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>39</th>\n",
+       "      <td>26.0</td>\n",
+       "      <td>13.0</td>\n",
+       "      <td>12596.0</td>\n",
+       "      <td>13161.0</td>\n",
+       "      <td>1686.0</td>\n",
+       "      <td>1896.0</td>\n",
+       "      <td>936.0</td>\n",
+       "      <td>970.0</td>\n",
+       "      <td>33.0</td>\n",
+       "      <td>40.0</td>\n",
+       "      <td>...</td>\n",
+       "      <td>16.9</td>\n",
+       "      <td>72.4</td>\n",
+       "      <td>35.5</td>\n",
+       "      <td>29.9</td>\n",
+       "      <td>38.5</td>\n",
+       "      <td>70.760733</td>\n",
+       "      <td>21.9</td>\n",
+       "      <td>0.242970</td>\n",
+       "      <td>778.0</td>\n",
+       "      <td>821.0</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "<p>5 rows × 32 columns</p>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "    Max AQI  Median AQI   WA_MALE  WA_FEMALE   BA_MALE  BA_FEMALE  IA_MALE  \\\n",
+       "1      74.0        37.0   94810.0   100388.0    9486.0    10107.0    903.0   \n",
+       "25     47.0        33.0   29676.0    31785.0    8345.0     8834.0    212.0   \n",
+       "27     92.0        35.0   40115.0    42386.0    7542.0     8560.0    334.0   \n",
+       "36    129.0        46.0  169820.0   179696.0  130550.0   155711.0    917.0   \n",
+       "39     26.0        13.0   12596.0    13161.0    1686.0     1896.0    936.0   \n",
+       "\n",
+       "    IA_FEMALE  AA_MALE  AA_FEMALE  ...  PREVENTHealth Insurance  \\\n",
+       "1       839.0    932.0     1448.0  ...                     13.6   \n",
+       "25      201.0    270.0      340.0  ...                     14.4   \n",
+       "27      293.0    412.0      429.0  ...                     16.1   \n",
+       "36      947.0   5599.0     6187.0  ...                     14.5   \n",
+       "39      970.0     33.0       40.0  ...                     16.9   \n",
+       "\n",
+       "    PREVENTMammography  UNHBEHObesity  UNHBEHPhysical Inactivity  \\\n",
+       "1                 74.0           29.4                       23.5   \n",
+       "25                77.0           35.1                       27.5   \n",
+       "27                75.4           36.9                       31.0   \n",
+       "36                81.8           34.6                       27.5   \n",
+       "39                72.4           35.5                       29.9   \n",
+       "\n",
+       "    UNHBEHSleep <7 hours  noise_mean  PCTUI_Pov      Pov%  OTHER_MALE  \\\n",
+       "1                   36.4   47.636945       25.7  0.182297      2042.0   \n",
+       "25                  38.8   62.698557       19.9  0.192970       688.0   \n",
+       "27                  38.8   50.429461       19.8  0.267143       927.0   \n",
+       "36                  39.7   44.628149       20.0  0.237729      4198.0   \n",
+       "39                  38.5   70.760733       21.9  0.242970       778.0   \n",
+       "\n",
+       "    OTHER_FEMALE  \n",
+       "1         2125.0  \n",
+       "25         766.0  \n",
+       "27         965.0  \n",
+       "36        4566.0  \n",
+       "39         821.0  \n",
+       "\n",
+       "[5 rows x 32 columns]"
+      ]
+     },
+     "execution_count": 9,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "X.head()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 11,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "#preprocess data\n",
+    "std = preprocessing.StandardScaler()\n",
+    "# X is a matrix\n",
+    "std.fit(X)\n",
+    "X_std = std.transform(X)\n",
+    "\n",
+    "#scale data\n",
+    "minmax = preprocessing.MinMaxScaler()\n",
+    "minmax.fit(X)\n",
+    "X_minmax = minmax.transform(X)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 12,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "#divide data into train and test sets\n",
+    "train_x, test_x, train_y, test_y = train_test_split(X_minmax, y,\n",
+    "                                                    test_size=0.2,\n",
+    "                                                    random_state=42)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 13,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from sklearn.linear_model import LinearRegression"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 14,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "#linear model\n",
+    "lr = LinearRegression()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 15,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import sklearn.metrics as metrics"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 16,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "LinearRegression()"
+      ]
+     },
+     "execution_count": 16,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "#fit model to data\n",
+    "lr.fit(train_x, train_y)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 17,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "#predicted values from our model on the test set\n",
+    "pred_y = lr.predict(test_x)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 18,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Mean Squared Error 5.080415498948976e-05\n"
+     ]
+    }
+   ],
+   "source": [
+    "#calculate mean squared error\n",
+    "mse = metrics.mean_squared_error(test_y, pred_y)\n",
+    "print(\"Mean Squared Error {}\".format(mse))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 30,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "#r-squared\n",
+    "from sklearn.metrics import r2_score\n",
+    "r2_score = r2_score(test_y, pred_y)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 33,
+   "metadata": {},
+   "outputs": [
+    {
+     "ename": "TypeError",
+     "evalue": "'numpy.float64' object is not callable",
+     "output_type": "error",
+     "traceback": [
+      "\u001b[0;31m---------------------------------------------------------------------------\u001b[0m",
+      "\u001b[0;31mTypeError\u001b[0m                                 Traceback (most recent call last)",
+      "\u001b[0;32m<ipython-input-33-4e4e90f4bbfe>\u001b[0m in \u001b[0;36m<module>\u001b[0;34m\u001b[0m\n\u001b[1;32m      5\u001b[0m \u001b[0max\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mset_xlabel\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0;34m'Actual'\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m      6\u001b[0m \u001b[0max\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mset_ylabel\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0;34m'Predicted'\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m----> 7\u001b[0;31m \u001b[0max\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mset_title\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0;34m'R2: '\u001b[0m \u001b[0;34m+\u001b[0m \u001b[0mstr\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mr2_score\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mtest_y\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0mpred_y\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m      8\u001b[0m \u001b[0;31m#regression line\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m      9\u001b[0m \u001b[0mtest_y\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0mpred_y\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0mtest_y\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mreshape\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0;34m-\u001b[0m\u001b[0;36m1\u001b[0m\u001b[0;34m,\u001b[0m\u001b[0;36m1\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0mpred_y\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mreshape\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0;34m-\u001b[0m\u001b[0;36m1\u001b[0m\u001b[0;34m,\u001b[0m\u001b[0;36m1\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n",
+      "\u001b[0;31mTypeError\u001b[0m: 'numpy.float64' object is not callable"
+     ]
+    },
+    {
+     "data": {
+      "image/png": "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\n",
+      "text/plain": [
+       "<Figure size 432x288 with 1 Axes>"
+      ]
+     },
+     "metadata": {
+      "needs_background": "light"
+     },
+     "output_type": "display_data"
+    }
+   ],
+   "source": [
+    "import matplotlib.pyplot as plt\n",
+    "fig, ax = plt.subplots()\n",
+    "ax.scatter(test_y, pred_y)\n",
+    "ax.plot([y.min(), y.max()], [y.min(), y.max()], 'k--', lw=4)\n",
+    "ax.set_xlabel('Actual')\n",
+    "ax.set_ylabel('Predicted')\n",
+    "ax.set_title('R2: ' + str(r2_score(test_y, pred_y)))\n",
+    "#regression line\n",
+    "test_y, pred_y = test_y.reshape(-1,1), pred_y.reshape(-1,1)\n",
+    "ax.plot(pred_y, LinearRegression().fit(test_y, pred_y).predict(test_y))\n",
+    "\n",
+    "plt.show()"
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.8.5"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 2
+}
